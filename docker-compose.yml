@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+
+  # ── Base de datos MySQL ─────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: gymtrack_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gymtrack
+      MYSQL_USER: gymtrack_user
+      MYSQL_PASSWORD: gymtrack_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      # Ejecuta el SQL automáticamente al crear el contenedor por primera vez
+      - ./database/gymtrack_database.sql:/docker-entrypoint-initdb.d/gymtrack_database.sql
+      # Persistencia de datos entre reinicios
+      - db_data:/var/lib/mysql
+    networks:
+      - gymtrack_net
+
+  # ── Backend PHP / Apache ────────────────────────────────────
+  backend:
+    image: php:8.2-apache
+    container_name: gymtrack_backend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - gymtrack_net
+
+  # ── Frontend Vue 3 / Vite ───────────────────────────────────
+  frontend:
+    image: node:20-alpine
+    container_name: gymtrack_frontend
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "5173:5173"
+    # Inicia el servidor de desarrollo de Vite (correr solo si el proyecto Vue ya está creado)
+    command: sh -c "npm install && npm run dev -- --host"
+    depends_on:
+      - backend
+    networks:
+      - gymtrack_net
+
+volumes:
+  db_data:
+
+networks:
+  gymtrack_net:
+    driver: bridge
