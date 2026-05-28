@@ -1,38 +1,38 @@
-# frontend/
+# frontend-temp
 
-Esta carpeta contendrá la Single Page Application desarrollada con Vue 3 + Vite.
+This template should help get you started developing with Vue 3 in Vite.
 
-## Cómo inicializar el proyecto Vue (primera vez)
+## Recommended IDE Setup
 
-```bash
-# Desde la raíz del repositorio
-cd frontend
-npm create vue@latest .
+[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+
+## Recommended Browser Setup
+
+- Chromium-based browsers (Chrome, Edge, Brave, etc.):
+  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
+  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
+- Firefox:
+  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
+  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+
+## Customize configuration
+
+See [Vite Configuration Reference](https://vite.dev/config/).
+
+## Project Setup
+
+```sh
 npm install
 ```
 
-## Estructura prevista
+### Compile and Hot-Reload for Development
 
+```sh
+npm run dev
 ```
-frontend/
-├── src/
-│   ├── main.js
-│   ├── App.vue
-│   ├── router/
-│   │   └── index.js        ← Vue Router con guardas de navegación
-│   ├── stores/
-│   │   └── auth.js         ← Pinia: estado de sesión del usuario
-│   ├── services/
-│   │   └── api.js          ← Instancia Axios con interceptor de token
-│   └── views/
-│       ├── HomeView.vue
-│       ├── LoginView.vue
-│       ├── RegisterView.vue
-│       ├── DashboardView.vue
-│       ├── ClassesView.vue
-│       └── admin/
-│           ├── AdminDashboard.vue
-│           ├── AdminUsers.vue
-│           └── AdminClasses.vue
-└── vite.config.js
+
+### Compile and Minify for Production
+
+```sh
+npm run build
 ```
