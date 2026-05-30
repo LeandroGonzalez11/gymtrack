@@ -30,6 +30,14 @@
           Confirmar contrasena
           <input v-model="form.confirmPassword" type="password" placeholder="Repeti tu contrasena" required :disabled="cargando" />
         </label>
+
+        <div class="turnstile-box">
+          <div ref="turnstileEl"></div>
+          <p v-if="turnstileDemo" class="captcha-note">
+            Turnstile en modo demo. Para produccion se configuran claves reales de Cloudflare.
+          </p>
+        </div>
+
         <button type="submit" class="primary-btn" :disabled="cargando">
           {{ cargando ? 'Creando cuenta...' : 'Crear cuenta' }}
         </button>
@@ -44,7 +52,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -54,6 +62,37 @@ const form = reactive({ nombre: '', email: '', password: '', confirmPassword: ''
 const cargando = ref(false)
 const error = ref(null)
 const exito = ref(null)
+const turnstileEl = ref(null)
+const turnstileToken = ref('')
+const turnstileWidgetId = ref(null)
+const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'
+const turnstileDemo = computed(() => turnstileSiteKey === '1x00000000000000000000AA')
+
+function renderTurnstile() {
+  if (!window.turnstile || !turnstileEl.value || turnstileWidgetId.value !== null) return
+
+  turnstileWidgetId.value = window.turnstile.render(turnstileEl.value, {
+    sitekey: turnstileSiteKey,
+    theme: 'dark',
+    callback: (token) => {
+      turnstileToken.value = token
+    },
+    'expired-callback': () => {
+      turnstileToken.value = ''
+    },
+    'error-callback': () => {
+      turnstileToken.value = ''
+      error.value = 'No se pudo verificar el captcha. Intentá de nuevo.'
+    },
+  })
+}
+
+function resetTurnstile() {
+  turnstileToken.value = ''
+  if (window.turnstile && turnstileWidgetId.value !== null) {
+    window.turnstile.reset(turnstileWidgetId.value)
+  }
+}
 
 async function submitRegister() {
   error.value = null
@@ -66,17 +105,36 @@ async function submitRegister() {
     error.value = 'La contrasena debe tener al menos 8 caracteres.'
     return
   }
+  if (!turnstileToken.value) {
+    error.value = 'Completá la verificación anti robot para crear la cuenta.'
+    return
+  }
   cargando.value = true
   try {
-    await authStore.registro(form.nombre, form.email, form.password)
+    await authStore.registro(form.nombre, form.email, form.password, turnstileToken.value)
     exito.value = 'Cuenta creada. Redirigiendo al inicio de sesion...'
     setTimeout(() => router.push({ name: 'login' }), 1200)
   } catch (e) {
     error.value = e.message
+    resetTurnstile()
   } finally {
     cargando.value = false
   }
 }
+
+onMounted(async () => {
+  await nextTick()
+  const interval = window.setInterval(() => {
+    renderTurnstile()
+    if (turnstileWidgetId.value !== null) window.clearInterval(interval)
+  }, 250)
+})
+
+onBeforeUnmount(() => {
+  if (window.turnstile && turnstileWidgetId.value !== null) {
+    window.turnstile.remove(turnstileWidgetId.value)
+  }
+})
 </script>
 
 <style scoped>
@@ -145,6 +203,18 @@ input:focus {
 
 .primary-btn {
   width: 100%;
+}
+
+.turnstile-box {
+  display: grid;
+  gap: 8px;
+  min-height: 72px;
+}
+
+.captcha-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .alert {

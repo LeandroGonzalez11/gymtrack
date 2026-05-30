@@ -61,6 +61,14 @@ class AuthController
             }
         }
 
+        if (!$this->verificarTurnstile($datos['turnstileToken'] ?? '')) {
+            $this->responder(400, [
+                'error'   => true,
+                'mensaje' => 'No se pudo validar la verificación anti robot.'
+            ]);
+            return;
+        }
+
         // Validamos que el email tenga formato correcto
         if (!filter_var($datos['email'], FILTER_VALIDATE_EMAIL)) {
             $this->responder(400, [
@@ -257,7 +265,43 @@ class AuthController
         // Este caso solo se usa para la cuenta de ejemplo admin.
         return hash_equals($password, $hash);
     }
+private function verificarTurnstile(string $token): bool
+{
+    $secret = getenv('TURNSTILE_SECRET_KEY') ?: '';
 
+    if ($secret === '') {
+        return $token !== '';
+    }
+
+    if ($token === '') {
+        return false;
+    }
+
+    $payload = http_build_query([
+        'secret' => $secret,
+        'response' => $token,
+        'remoteip' => $_SERVER['REMOTE_ADDR'] ?? null,
+    ]);
+
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
+            'content' => $payload,
+            'timeout' => 5,
+        ],
+    ]);
+
+    $respuesta = @file_get_contents('https://challenges.cloudflare.com/turnstile/v0/siteverify', false, $context);
+
+    if ($respuesta === false) {
+        return false;
+    }
+
+    $resultado = json_decode($respuesta, true);
+
+    return (bool)($resultado['success'] ?? false);
+}
     // ─────────────────────────────────────────────────────────
     // HELPER: responder con JSON
     // ─────────────────────────────────────────────────────────

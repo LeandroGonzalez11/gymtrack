@@ -48,8 +48,13 @@ export const useAuthStore = defineStore('auth', () => {
    * Registra un nuevo socio.
    * @throws {Error} si el email ya existe o los datos son inválidos
    */
-  async function registro(nombre, email, password) {
-    const { ok, data } = await api.post('/auth/registro', { nombre, email, password })
+  async function registro(nombre, email, password, turnstileToken = '') {
+    const { ok, data } = await api.post('/auth/registro', {
+      nombre,
+      email,
+      password,
+      turnstileToken,
+    })
 
     if (!ok || data.error) {
       throw new Error(data.mensaje || 'Error al crear la cuenta.')
