@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   # ── Base de datos MySQL ─────────────────────────────────────
@@ -15,16 +13,22 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      # Ejecuta el SQL automáticamente al crear el contenedor por primera vez
       - ./database/gymtrack_database.sql:/docker-entrypoint-initdb.d/gymtrack_database.sql
-      # Persistencia de datos entre reinicios
       - db_data:/var/lib/mysql
     networks:
       - gymtrack_net
 
   # ── Backend PHP / Apache ────────────────────────────────────
+  # Usamos dockerfile_inline para instalar la extensión PDO MySQL
+  # que la imagen base php:8.2-apache no incluye por defecto.
   backend:
-    image: php:8.2-apache
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM php:8.2-apache
+        RUN docker-php-ext-install pdo pdo_mysql \
+            && a2enmod rewrite
+        RUN echo 'ServerName localhost' >> /etc/apache2/apache2.conf
     container_name: gymtrack_backend
     restart: unless-stopped
     ports:
@@ -44,10 +48,10 @@ services:
     working_dir: /app
     volumes:
       - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
     ports:
       - "5173:5173"
-    # Inicia el servidor de desarrollo de Vite (correr solo si el proyecto Vue ya está creado)
-    command: sh -c "npm install && npm run dev -- --host"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
       - backend
     networks:
@@ -55,6 +59,7 @@ services:
 
 volumes:
   db_data:
+  frontend_node_modules:
 
 networks:
   gymtrack_net:

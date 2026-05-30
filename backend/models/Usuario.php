@@ -138,6 +138,38 @@ class Usuario
         return $stmt->fetch();
     }
 
+    public function listarSocios(): array
+    {
+        $stmt = $this->pdo->query(
+            'SELECT u.id, u.nombre, u.email, u.telefono, u.rol_id, u.activo, u.creado_en,
+                    r.nombre AS rol_nombre
+             FROM usuarios u
+             JOIN roles r ON u.rol_id = r.id
+             WHERE u.rol_id = 1
+             ORDER BY u.creado_en DESC'
+        );
+
+        return $stmt->fetchAll();
+    }
+
+    public function cambiarEstado(int $id, int $activo): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE usuarios SET activo = ? WHERE id = ?'
+        );
+
+        return $stmt->execute([$activo, $id]);
+    }
+
+    public function contarSociosActivos(): int
+    {
+        $stmt = $this->pdo->query(
+            'SELECT COUNT(*) FROM usuarios WHERE rol_id = 1 AND activo = 1'
+        );
+
+        return (int) $stmt->fetchColumn();
+    }
+
     // ─────────────────────────────────────────────────────────
     // ACTUALIZAR PERFIL
     // ─────────────────────────────────────────────────────────

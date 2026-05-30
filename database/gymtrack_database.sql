@@ -50,6 +50,14 @@ CREATE TABLE IF NOT EXISTS usuarios (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Cuenta de administrador de ejemplo
+-- Email: admin@gmail.com
+-- Password: admin123
+-- La contraseña se guarda en texto plano en este seed para mantener la compatibilidad
+-- con la versión de ejemplo. El backend acepta este caso en el login.
+INSERT IGNORE INTO usuarios (nombre, email, password_hash, telefono, rol_id, activo)
+VALUES ('Administrador GymTrack', 'admin@gmail.com', 'admin123', NULL, 2, 1);
+
 -- ------------------------------------------------------------
 -- Tabla: membresias
 -- ------------------------------------------------------------
